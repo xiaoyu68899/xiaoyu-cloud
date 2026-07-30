@@ -1,0 +1,9 @@
+{
+  "name": "xiaoyu-cloud",
+  "version": "1.0.0",
+  "description": "小雨工作台云端同步接口",
+  "main": "api/index.js",
+  "dependencies": {
+    "@vercel/blob": "^0.26.0"
+  }
+}
