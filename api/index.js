@@ -1,6 +1,7 @@
-const { get, put } = require('@vercel/blob');
+const fs = require('fs');
+const path = require('path');
 
-const BLOB_KEY = 'xiaoyu-data.json';
+const DATA_FILE = path.join('/tmp', 'xiaoyu-data.json');
 
 function setCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -20,24 +21,32 @@ function parseBody(req) {
   });
 }
 
+function readData() {
+  try {
+    if (fs.existsSync(DATA_FILE)) {
+      return JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8'));
+    }
+  } catch (e) {}
+  return { updatedAt: new Date().toISOString(), data: {} };
+}
+
+function writeData(data) {
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+}
+
 module.exports = async (req, res) => {
   setCors(res);
   if (req.method === 'OPTIONS') return res.status(204).end();
 
   try {
     if (req.method === 'GET') {
-      try {
-        const blob = await get(BLOB_KEY);
-        const text = await blob.text();
-        return res.status(200).json(JSON.parse(text));
-      } catch {
-        return res.status(200).json({ updatedAt: new Date().toISOString(), data: {} });
-      }
+      const data = readData();
+      return res.status(200).json(data);
     }
 
     if (req.method === 'PUT') {
       const body = await parseBody(req);
-      await put(BLOB_KEY, JSON.stringify(body), { contentType: 'application/json' });
+      writeData(body);
       return res.status(200).json({ ok: true, updatedAt: new Date().toISOString() });
     }
 
