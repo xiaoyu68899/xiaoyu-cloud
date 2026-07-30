@@ -2,25 +2,33 @@ const { get, put } = require('@vercel/blob');
 
 const BLOB_KEY = 'xiaoyu-data.json';
 
+function setCors(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,PUT,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Max-Age', '86400');
+}
+
 function parseBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
     req.on('data', chunk => body += chunk);
     req.on('end', () => {
-      try { resolve(JSON.parse(body)); } catch(e) { resolve({}); }
+      try {
+        resolve(JSON.parse(body || '{}'));
+      } catch (e) {
+        resolve({});
+      }
     });
     req.on('error', reject);
   });
 }
 
 module.exports = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization');
+  setCors(res);
 
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    return res.status(204).end();
   }
 
   try {
@@ -28,25 +36,38 @@ module.exports = async (req, res) => {
       try {
         const blob = await get(BLOB_KEY);
         const text = await blob.text();
-        return res.json(JSON.parse(text));
-      } catch {
-        return res.json({ updatedAt: new Date().toISOString(), data: {} });
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        return res.status(200).send(text);
+      } catch (e) {
+        return res.status(200).json({
+          updatedAt: new Date().toISOString(),
+          data: {}
+        });
       }
     }
 
     if (req.method === 'PUT') {
       const body = await parseBody(req);
+
       await put(BLOB_KEY, JSON.stringify(body), {
         access: 'public',
         contentType: 'application/json',
-        allowOverwrite: true,
+        allowOverwrite: true
       });
-      return res.json({ ok: true, updatedAt: new Date().toISOString() });
+
+      return res.status(200).json({
+        ok: true,
+        updatedAt: new Date().toISOString()
+      });
     }
 
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({
+      error: 'Method not allowed'
+    });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({
+      error: err.message
+    });
   }
 };
