@@ -50,7 +50,7 @@ module.exports = async (req, res) => {
       const body = await parseBody(req);
 
       await put(BLOB_KEY, JSON.stringify(body), {
-        access: 'public',
+        access: 'private',
         contentType: 'application/json',
         allowOverwrite: true
       });
