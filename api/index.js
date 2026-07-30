@@ -37,7 +37,7 @@ module.exports = async (req, res) => {
 
     if (req.method === 'PUT') {
       const body = await parseBody(req);
-      await put(BLOB_KEY, JSON.stringify(body), { access: 'public', contentType: 'application/json' });
+      await put(BLOB_KEY, JSON.stringify(body), { access: 'private', contentType: 'application/json' });
       return res.status(200).json({ ok: true, updatedAt: new Date().toISOString() });
     }
 
